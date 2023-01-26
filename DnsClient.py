@@ -4,8 +4,9 @@ import socket
 import timeit as timer
 
 
-def request_ip(dns_args: argparse.Namespace) -> None:
+def request_ip(dns_args: argparse.Namespace):
     """Request IP address from DNS server"""
+
     timeout: int = dns_args.t
     max_retries: int = dns_args.r
     port: int = dns_args.p
@@ -37,33 +38,29 @@ def request_ip(dns_args: argparse.Namespace) -> None:
 
                 # Send the request to the server and wait for the response
                 request_bytes: bytes = request.to_bytes()
-                # print(f"request_bytes: {request_bytes}")
-                # dns.Request.from_bytes(request_bytes)
 
                 start_time: float = timer.default_timer()
+
                 sock.sendto(request_bytes, (server_ip, port))
-                response_bytes, addr = sock.recvfrom(1024)
-                # print(f"ADDR: {addr}")
+                response_bytes = sock.recv(1024)  # 1024 bytes as the max size of a DNS response
 
                 time: float = timer.default_timer() - start_time
-
-                # print(f"response_bytes: {response_bytes}")
 
             print(f"Response received after {time:.3f} seconds ({retries} retries)")
             response: dns.Response = dns.Response(response_bytes)
 
             if response.rcode == 1:
-                print("FORMAT ERROR")
+                print("FORMAT ERROR")  # TODO: Handle this better
             elif response.rcode == 2:
-                print("SERVER FAILURE")
+                print("SERVER FAILURE")  # TODO: Handle this better
             elif response.rcode == 3:
-                print("NAME ERROR")
+                print("NAME ERROR")  # TODO: Handle this better
             elif response.rcode == 4:
-                print("NOT IMPLEMENTED")
+                print("NOT IMPLEMENTED")  # TODO: Handle this better
             elif response.rcode == 5:
-                print("REFUSED")
+                print("REFUSED")  # TODO: Handle this better
             else:
-                response.print()
+                response.print()  # Successful response
                 break
 
         except socket.timeout as timeout_error:

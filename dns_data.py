@@ -28,6 +28,8 @@ def decode_domain_name(encoded_domain_name: bytes, start_index: int, domain_cach
     :return: decoded domain name
     """
 
+    # TODO: major bug here, need to fix when EXCHANGE section points to original offset in response packet
+
     if domain_cache is None:
         domain_cache = {}
 
@@ -144,14 +146,14 @@ class Record:
             ip_address: str = ".".join([str(b) for b in self.rdata])
             return f"IP\t\t{ip_address}\t\t{self.ttl}\t\t{auth_str}"
         elif self.qtype == QType.NS:
-            server_name: str = decode_domain_name(self.rdata, 0)[0]
+            server_name: str = decode_domain_name(self.rdata, 0)[0]  # TODO: major error here
             return f"NS\t\t{server_name}\t\t{self.ttl}\t\t{auth_str}"
         elif self.qtype == QType.CNAME:
             alias: str = self.rdata.decode("ascii")
             return f"CNAME\t\t{alias}\t\t{self.ttl}\t\t{auth_str}"
         elif self.qtype == QType.MX:
             preference: int = int.from_bytes(self.rdata[0:2], "big")
-            exchange: str = decode_domain_name(self.rdata, 2)[0]
+            exchange: str = decode_domain_name(self.rdata, 2)[0]  # TODO: major error here
             return f"MX\t\t{exchange}\t\t{preference}\t\t{self.ttl}\t\t{auth_str}"
         else:
             return f"OTHER {self.qtype.name}\t{self.rdata}\t{self.ttl}\t\t{auth_str}"
@@ -191,17 +193,12 @@ class Response:
         offset: int = HEADER_SIZE
         domain_name_cache: Dict[int, str] = {}  # Cache of domain names at offset to avoid parsing them multiple times
         qname, offset = decode_domain_name(self.response_bytes, offset, domain_name_cache)
-        print(domain_name_cache)
 
         offset += 4  # Skip QTYPE and QCLASS for question section
 
-        for i in range(len(self.response_bytes[offset:])):
-            print(self.response_bytes[offset+i:offset+i+1].hex(), end=" ")
-        print()
-
-        # Parse records
+        # Parse records in answer section and additional section (skip authority section)
         offset = self.parse_section(offset, self.answer_count, self.answer_records, domain_name_cache)
-        # offset = self.parse_section(offset, self.additional_count, self.additional_records, domain_name_cache)
+        self.parse_section(offset, self.additional_count, self.additional_records, domain_name_cache)
 
     def parse_section(self, offset: int, count: int, records_list: List[Record], domain_cache: Dict[int, str]) -> int:
         """
@@ -215,24 +212,15 @@ class Response:
 
         for _ in range(count):
             name, offset = decode_domain_name(self.response_bytes, offset, domain_cache)
-            print(f"Name: {name}, offset: {offset}")
-
             qtype = QType(int.from_bytes(self.response_bytes[offset:offset + 2], "big"))
-            print(f"QTYPE: {qtype.name}")
-
-            # TODO: error when class_ is not 0x0001
             class_ = int.from_bytes(self.response_bytes[offset + 2:offset + 4], "big")
-
             ttl = int.from_bytes(self.response_bytes[offset + 4:offset + 8], "big")
-            print(f"ttl: {self.response_bytes[offset + 4:offset + 8].hex()}, ttl: {ttl}")
             rdlength = int.from_bytes(self.response_bytes[offset + 8:offset + 10], "big")
-            print(f"rdlength: {self.response_bytes[offset + 8:offset + 10].hex()}, rdl: {rdlength}")
-
             rdata = self.response_bytes[offset + 10:offset + 10 + rdlength]
+
             offset += 10 + rdlength
 
             record: Record = Record(name, qtype, class_, ttl, rdlength, rdata, self.authoritative)
-
             records_list.append(record)
 
         return offset
