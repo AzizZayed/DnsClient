@@ -13,7 +13,7 @@ def request_ip(dns_args: argparse.Namespace):
     server_ip: str = dns_args.server
     domain_name: str = dns_args.name
 
-    if server_ip[0] == "@":  # @server
+    if server_ip[0] == "@":  # @server -> server
         server_ip = server_ip[1:]
 
     query_type: dns.QType = dns.QType.A
@@ -103,6 +103,5 @@ if __name__ == '__main__':
     parser.add_argument('name', help="Domain name to query for")
 
     args: argparse.Namespace = parser.parse_args()
-    print(args)
     request_ip(args)
 
