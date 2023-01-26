@@ -2,7 +2,7 @@
 
 ## Usage
 
-### Install dependencies
+### Usage
 
 ```shell
 python DnsClient.py [-t timeout] [-r max-retries] [-p port] [-mx|-ns] @server name
