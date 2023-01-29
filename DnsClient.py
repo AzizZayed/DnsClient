@@ -16,11 +16,11 @@ def request_ip(dns_args: argparse.Namespace):
     if server_ip[0] == "@":  # @server -> server
         server_ip = server_ip[1:]
 
-    query_type: dns.QType = dns.QType.A
+    query_type: dns.QueryType = dns.QueryType.A
     if dns_args.mx:
-        query_type = dns.QType.MX
+        query_type = dns.QueryType.MX
     elif dns_args.ns:
-        query_type = dns.QType.NS
+        query_type = dns.QueryType.NS
 
     print(f"DnsClient sending request for {domain_name}")
     print(f"Server: {server_ip}")
@@ -30,7 +30,7 @@ def request_ip(dns_args: argparse.Namespace):
 
     while retries < max_retries:
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:  # Open a UDP socket
                 sock.settimeout(timeout)
 
                 # Create a DNS request
@@ -49,12 +49,10 @@ def request_ip(dns_args: argparse.Namespace):
             print(f"Response received after {time:.3f} seconds ({retries} retries)")
             response: dns.Response = dns.Response(response_bytes)
 
-            if response.rcode == 1:
+            if response.rcode == 1:  # Return code
                 print("FORMAT ERROR")  # TODO: Handle this better
             elif response.rcode == 2:
                 print("SERVER FAILURE")  # TODO: Handle this better
-            elif response.rcode == 3:
-                print("NAME ERROR")  # TODO: Handle this better
             elif response.rcode == 4:
                 print("NOT IMPLEMENTED")  # TODO: Handle this better
             elif response.rcode == 5:

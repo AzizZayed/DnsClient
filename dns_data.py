@@ -27,6 +27,7 @@ def decode_int(encoded_int: bytes) -> int:
 def encode_domain_name(domain_name: str) -> bytes:
     """
     Encode domain name into bytes
+    Example: "www.google.com" -> b"\x03www\x06google\x03com\x00"
     :return: encoded domain name
     """
     encoded_domain_name: bytes = b""
@@ -77,7 +78,7 @@ def decode_domain_name(encoded_domain_name: bytes, start_index: int, domain_cach
     return domain_name, index + 1
 
 
-class QType(Enum):
+class QueryType(Enum):
     """Enum for DNS query types with their corresponding values"""
 
     A = 0x0001
@@ -90,9 +91,9 @@ class QType(Enum):
 class Request:
     """DNS request class"""
 
-    def __init__(self, domain_name: str, query_type: QType):
+    def __init__(self, domain_name: str, query_type: QueryType):
         self.domain_name: str = domain_name
-        self.query_type: QType = query_type
+        self.query_type: QueryType = query_type
 
     def to_bytes(self) -> bytes:
         """
@@ -183,8 +184,8 @@ class Record:
         self.authoritative: bool = authoritative
 
         self.name, offset = decode_domain_name(response, start_index, domain_cache)
-        self.qtype: QType = QType(decode_int(response[offset:offset + 2]))
-        self.class_: int = decode_int(response[offset + 2:offset + 4])  # Not used
+        self.qtype: QueryType = QueryType(decode_int(response[offset:offset + 2]))
+        self.class_: int = decode_int(response[offset + 2:offset + 4])  # TODO throw error if not 1
         self.ttl: int = decode_int(response[offset + 4:offset + 8])
 
         self.rdlength: int = decode_int(response[offset + 8:offset + 10])
@@ -195,16 +196,16 @@ class Record:
 
     def __str__(self) -> str:
         auth_str: str = "auth" if self.authoritative else "noauth"
-        if self.qtype == QType.A:
+        if self.qtype == QueryType.A:
             ip_address: str = ".".join([str(byte) for byte in self.rdata])
             return f"IP\t\t{ip_address}\t\t{self.ttl}\t\t{auth_str}"
-        elif self.qtype == QType.NS:
+        elif self.qtype == QueryType.NS:
             server_name: str = decode_domain_name(self.response, self.rdata_offset, self.domain_cache)[0]
             return f"NS\t\t{server_name}\t\t{self.ttl}\t\t{auth_str}"
-        elif self.qtype == QType.CNAME:
+        elif self.qtype == QueryType.CNAME:
             alias: str = self.rdata.decode("ascii")  # TODO: test!!, might need to be decoded with "decode_domain_name"
             return f"CNAME\t\t{alias}\t\t{self.ttl}\t\t{auth_str}"
-        elif self.qtype == QType.MX:
+        elif self.qtype == QueryType.MX:
             preference: int = decode_int(self.rdata[0:2])
             exchange: str = decode_domain_name(self.response, self.rdata_offset + 2, self.domain_cache)[0]
             return f"MX\t\t{exchange}\t\t{preference}\t\t{self.ttl}\t\t{auth_str}"
@@ -240,7 +241,7 @@ class Response:
         1. Header
         2. Question
         3. Answer
-        4. Authority
+        4. Authority  (we will ignore this for now)
         5. Additional
 
         The header is formatted similarly to the request header.
@@ -250,6 +251,7 @@ class Response:
         The additional section contains resource records.
         """
 
+        # Parse header
         self.id = decode_int(self.response_bytes[0:2])
         self.flags = decode_int(self.response_bytes[2:4])
         self.authoritative = bool(self.flags & 0x0400)
@@ -286,4 +288,4 @@ class Response:
                 print(record)
 
         if self.answer_count == 0 and self.additional_count == 0:
-            print("NOTFOUND")
+            print("NOTFOUND")  # TODO: throw error instead?
