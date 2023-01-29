@@ -2,6 +2,8 @@ from enum import Enum
 import random
 from typing import List, Tuple, Dict
 
+from DnsError import FormatError
+
 HEADER_SIZE: int = 12
 
 
@@ -289,3 +291,16 @@ class Response:
 
         if self.answer_count == 0 and self.additional_count == 0:
             print("NOTFOUND")  # TODO: throw error instead?
+
+    def validate(self):
+        if self.rcode == 1:  # Return code
+            raise FormatError
+        elif self.rcode == 2:
+            print("SERVER FAILURE")
+        elif self.rcode == 4:
+            print("NOT IMPLEMENTED")
+        elif self.rcode == 5:
+            print("REFUSED")
+        else:
+            self.print()  # Successful response
+            break
