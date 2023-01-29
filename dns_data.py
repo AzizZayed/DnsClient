@@ -221,7 +221,7 @@ class Record:
 
         self.end_index: int = self.rdata_offset + self.rdlength
 
-        if self.class_ is not 1:
+        if self.class_ != 1:
             raise ClassError
 
     def __str__(self) -> str:
