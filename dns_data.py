@@ -205,7 +205,7 @@ class Record:
             server_name: str = decode_domain_name(self.response, self.rdata_offset, self.domain_cache)[0]
             return f"NS\t\t{server_name}\t\t{self.ttl}\t\t{auth_str}"
         elif self.qtype == QueryType.CNAME:
-            alias: str = self.rdata.decode("ascii")  # TODO: test!!, might need to be decoded with "decode_domain_name"
+            alias: str = decode_domain_name(self.response, self.rdata_offset, self.domain_cache)[0]
             return f"CNAME\t\t{alias}\t\t{self.ttl}\t\t{auth_str}"
         elif self.qtype == QueryType.MX:
             preference: int = decode_int(self.rdata[0:2])
