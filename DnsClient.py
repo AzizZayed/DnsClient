@@ -3,7 +3,7 @@ import dns_data as dns
 import socket
 import timeit as timer
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound
+from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound, ClassError
 
 
 def request_ip(dns_args: argparse.Namespace):
@@ -84,6 +84,8 @@ def request_ip(dns_args: argparse.Namespace):
         except NotFound:
             print("NOTFOUND")
             break
+        except ClassError:
+            print("CLASS is not 1")
 
     if retries == max_retries:
         print(f"ERROR\tMaximum retries exceeded: {max_retries}")

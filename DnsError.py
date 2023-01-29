@@ -13,6 +13,10 @@ class NotImplement(Exception):
 class Refused(Exception):
     pass
 
+
 class NotFound(Exception):
     pass
 
+
+class ClassError(Exception):
+    pass

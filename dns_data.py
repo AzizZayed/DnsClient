@@ -2,7 +2,32 @@ from enum import Enum
 import random
 from typing import List, Tuple, Dict
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound
+from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound, ClassError
+
+
+class FormatError(Exception):
+    pass
+
+
+class ServerFailure(Exception):
+    pass
+
+
+class NotImplement(Exception):
+    pass
+
+
+class Refused(Exception):
+    pass
+
+
+class NotFound(Exception):
+    pass
+
+
+class ClassError(Exception):
+    pass
+
 
 HEADER_SIZE: int = 12
 
@@ -187,7 +212,7 @@ class Record:
 
         self.name, offset = decode_domain_name(response, start_index, domain_cache)
         self.qtype: QueryType = QueryType(decode_int(response[offset:offset + 2]))
-        self.class_: int = decode_int(response[offset + 2:offset + 4])  # TODO throw error if not 1
+        self.class_: int = decode_int(response[offset + 2:offset + 4])
         self.ttl: int = decode_int(response[offset + 4:offset + 8])
 
         self.rdlength: int = decode_int(response[offset + 8:offset + 10])
@@ -195,6 +220,9 @@ class Record:
         self.rdata_offset: int = offset + 10
 
         self.end_index: int = self.rdata_offset + self.rdlength
+
+        if self.class_ is not 1:
+            raise ClassError
 
     def __str__(self) -> str:
         auth_str: str = "auth" if self.authoritative else "noauth"
@@ -301,4 +329,5 @@ class Response:
             raise NotImplement
         elif self.rcode == 5:
             raise Refused
+
 
