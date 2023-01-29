@@ -2,7 +2,7 @@ from enum import Enum
 import random
 from typing import List, Tuple, Dict
 
-from DnsError import FormatError
+from DnsError import FormatError, ServerFailure, NotImplement, Refused
 
 HEADER_SIZE: int = 12
 
@@ -296,11 +296,9 @@ class Response:
         if self.rcode == 1:  # Return code
             raise FormatError
         elif self.rcode == 2:
-            print("SERVER FAILURE")
+            raise ServerFailure
         elif self.rcode == 4:
-            print("NOT IMPLEMENTED")
+            raise NotImplement
         elif self.rcode == 5:
-            print("REFUSED")
-        else:
-            self.print()  # Successful response
-            break
+            raise Refused
+
