@@ -42,14 +42,13 @@ def request_ip(dns_args: argparse.Namespace):
                 request_bytes: bytes = request.to_bytes()
 
                 start_time: float = timer.default_timer()
-
+                retries += 1
                 sock.sendto(request_bytes, (server_ip, port))
                 response_bytes = sock.recv(1024)  # 1024 bytes as the max size of a DNS response
 
                 time: float = timer.default_timer() - start_time
 
-            print(f"Response received after {time:.3f} seconds ({retries} retries)")
-            retries += 1
+            print(f"Response received after {time:.3f} seconds ({retries-1} retries)")
             response: dns.Response = dns.Response(response_bytes)
 
             "Will throw the appropriate errors"
@@ -82,7 +81,6 @@ def request_ip(dns_args: argparse.Namespace):
         except Refused:
             print("REFUSED")
             continue
-
 
     if retries == max_retries:
         print(f"ERROR\tMaximum retries exceeded: {max_retries}")
