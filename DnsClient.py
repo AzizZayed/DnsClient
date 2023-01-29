@@ -3,7 +3,7 @@ import dns_data as dns
 import socket
 import timeit as timer
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused
+from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound
 
 
 def request_ip(dns_args: argparse.Namespace):
@@ -48,7 +48,7 @@ def request_ip(dns_args: argparse.Namespace):
 
                 time: float = timer.default_timer() - start_time
 
-            print(f"Response received after {time:.3f} seconds ({retries-1} retries)")
+            print(f"Response received after {time:.3f} seconds ({retries - 1} retries)")
             response: dns.Response = dns.Response(response_bytes)
 
             "Will throw the appropriate errors"
@@ -71,16 +71,19 @@ def request_ip(dns_args: argparse.Namespace):
             break
         except FormatError:
             print("FORMAT ERROR")
-            continue
+            break
         except ServerFailure:
             print("SERVER FAILURE")
-            continue
+            break
         except NotImplement:
             print("NOT IMPLEMENTED")
-            continue
+            break
         except Refused:
             print("REFUSED")
-            continue
+            break
+        except NotFound:
+            print("NOTFOUND")
+            break
 
     if retries == max_retries:
         print(f"ERROR\tMaximum retries exceeded: {max_retries}")
@@ -109,4 +112,3 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
     request_ip(args)
-

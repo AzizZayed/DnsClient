@@ -2,7 +2,7 @@ from enum import Enum
 import random
 from typing import List, Tuple, Dict
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused
+from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound
 
 HEADER_SIZE: int = 12
 
@@ -290,7 +290,7 @@ class Response:
                 print(record)
 
         if self.answer_count == 0 and self.additional_count == 0:
-            print("NOTFOUND")  # TODO: throw error instead?
+            raise NotFound
 
     def validate(self):
         if self.rcode == 1:  # Return code
