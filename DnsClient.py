@@ -47,6 +47,7 @@ def request_ip(dns_args: argparse.Namespace):
                 time: float = timer.default_timer() - start_time
 
             print(f"Response received after {time:.3f} seconds ({retries} retries)")
+            retries += 1
             response: dns.Response = dns.Response(response_bytes)
 
             if response.rcode == 1:  # Return code
@@ -63,7 +64,6 @@ def request_ip(dns_args: argparse.Namespace):
 
         except socket.timeout as timeout_error:
             print(f"ERROR\tTimeout while contacting server: {timeout_error}. Retransmitting request.")
-            retries += 1
             continue
         except socket.gaierror as gai_error:
             print(f"ERROR\tSocket error: {gai_error}")
