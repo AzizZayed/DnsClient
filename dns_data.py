@@ -2,8 +2,6 @@ from enum import Enum
 import random
 from typing import List, Tuple, Dict
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound, ClassError
-
 
 class FormatError(Exception):
     pass
@@ -329,5 +327,3 @@ class Response:
             raise NotImplement
         elif self.rcode == 5:
             raise Refused
-
-

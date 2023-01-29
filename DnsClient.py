@@ -3,8 +3,6 @@ import dns_data as dns
 import socket
 import timeit as timer
 
-from DnsError import FormatError, ServerFailure, NotImplement, Refused, NotFound, ClassError
-
 
 def request_ip(dns_args: argparse.Namespace):
     """Request IP address from DNS server"""
@@ -69,22 +67,22 @@ def request_ip(dns_args: argparse.Namespace):
         except socket.error as socket_error:
             print(f"ERROR\tSocket error: {socket_error}")
             break
-        except FormatError:
+        except dns.FormatError:
             print("FORMAT ERROR")
             break
-        except ServerFailure:
+        except dns.ServerFailure:
             print("SERVER FAILURE")
             break
-        except NotImplement:
+        except dns.NotImplement:
             print("NOT IMPLEMENTED")
             break
-        except Refused:
+        except dns.Refused:
             print("REFUSED")
             break
-        except NotFound:
+        except dns.NotFound:
             print("NOTFOUND")
             break
-        except ClassError:
+        except dns.ClassError:
             print("CLASS is not 1")
 
     if retries == max_retries:
