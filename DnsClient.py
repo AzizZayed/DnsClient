@@ -22,6 +22,20 @@ def request_ip(dns_args: argparse.Namespace):
     elif dns_args.ns:
         query_type = dns.QueryType.NS
 
+    server_ip_bytes = server_ip.split(".")
+    if len(server_ip_bytes) != 4:
+        print("ERROR\tInvalid IPv4 address: " + server_ip)
+        return
+    for byte in server_ip_bytes:
+        if byte.isnumeric():
+            byte_int = int(byte)
+            if byte_int < 0 or byte_int > 255:
+                print("ERROR\tInvalid IPv4 address: " + server_ip)
+                return
+        else:
+            print("ERROR\tInvalid IPv4 address: " + server_ip)
+            return
+
     print(f"DnsClient sending request for {domain_name}")
     print(f"Server: {server_ip}")
     print(f"Request type: {query_type.name}\n")

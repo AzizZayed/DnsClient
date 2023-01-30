@@ -281,8 +281,10 @@ class Response:
         if self.authority_count > 0:
             # Skip authority section
             for _ in range(self.authority_count):
-                record: Record = Record(self.response_bytes, offset, domain_name_cache, self.authoritative)
-                offset = record.end_index
+                _, offset = decode_domain_name(self.response_bytes, offset, domain_name_cache)
+                offset += 8
+                rdlength: int = decode_int(self.response_bytes[offset:offset + 2])
+                offset = offset + 2 + rdlength
 
         # Parse records in answer section and additional section (skip authority section)
         for _ in range(self.answer_count):
