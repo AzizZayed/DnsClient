@@ -3,30 +3,6 @@ import random
 from typing import List, Tuple, Dict
 
 
-class FormatError(Exception):
-    pass
-
-
-class ServerFailure(Exception):
-    pass
-
-
-class NotImplement(Exception):
-    pass
-
-
-class Refused(Exception):
-    pass
-
-
-class NotFound(Exception):
-    pass
-
-
-class ClassError(Exception):
-    pass
-
-
 HEADER_SIZE: int = 12
 
 
@@ -199,7 +175,7 @@ class Record:
     If the type is A, then RDATA is a 4-byte IPv4 address.
     If the type is NS, then RDATA is an encoded domain name.
     If the type is MX, then RDATA is a 2-byte preference value followed by an encoded domain name.
-    If the type is CNAME, then RDATA is a n alias.
+    If the type is CNAME, then RDATA is an alias.
 
     """
 
@@ -211,6 +187,10 @@ class Record:
         self.name, offset = decode_domain_name(response, start_index, domain_cache)
         self.qtype: QueryType = QueryType(decode_int(response[offset:offset + 2]))
         self.class_: int = decode_int(response[offset + 2:offset + 4])
+
+        if self.class_ != 1:
+            print("ERROR\tCLASS is not 1, representing an Internet address.")
+
         self.ttl: int = decode_int(response[offset + 4:offset + 8])
 
         self.rdlength: int = decode_int(response[offset + 8:offset + 10])
@@ -218,9 +198,6 @@ class Record:
         self.rdata_offset: int = offset + 10
 
         self.end_index: int = self.rdata_offset + self.rdlength
-
-        if self.class_ != 1:
-            raise ClassError
 
     def __str__(self) -> str:
         auth_str: str = "auth" if self.authoritative else "noauth"
@@ -256,6 +233,7 @@ class Response:
         self.question_count: int = 1
         self.answer_count: int = 0
         self.answer_records: List[Record] = []
+        self.authority_count: int = 0
         self.additional_count: int = 0
         self.additional_records: List[Record] = []
 
@@ -284,8 +262,14 @@ class Response:
         self.flags = decode_int(self.response_bytes[2:4])
         self.authoritative = bool(self.flags & 0x0400)
         self.rcode = self.flags & 0x000F
+
+        recursion_supported = bool(self.flags & 0x0080)
+        if not recursion_supported:
+            print("ERROR\tRecursion is not supported by the server.")
+
         self.question_count = decode_int(self.response_bytes[4:6])
         self.answer_count = decode_int(self.response_bytes[6:8])
+        self.authority_count = decode_int(self.response_bytes[8:10])
         self.additional_count = decode_int(self.response_bytes[10:12])
 
         offset: int = HEADER_SIZE
@@ -293,6 +277,12 @@ class Response:
         qname, offset = decode_domain_name(self.response_bytes, offset, domain_name_cache)
 
         offset += 4  # Skip QTYPE and QCLASS for question section
+
+        if self.authority_count > 0:
+            # Skip authority section
+            for _ in range(self.authority_count):
+                record: Record = Record(self.response_bytes, offset, domain_name_cache, self.authoritative)
+                offset = record.end_index
 
         # Parse records in answer section and additional section (skip authority section)
         for _ in range(self.answer_count):
@@ -316,14 +306,4 @@ class Response:
                 print(record)
 
         if self.answer_count == 0 and self.additional_count == 0:
-            raise NotFound
-
-    def validate(self):
-        if self.rcode == 1:  # Return code
-            raise FormatError
-        elif self.rcode == 2:
-            raise ServerFailure
-        elif self.rcode == 4:
-            raise NotImplement
-        elif self.rcode == 5:
-            raise Refused
+            print("NOTFOUND")

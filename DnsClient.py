@@ -49,8 +49,14 @@ def request_ip(dns_args: argparse.Namespace):
             print(f"Response received after {time:.3f} seconds ({retries - 1} retries)")
             response: dns.Response = dns.Response(response_bytes)
 
-            "Will throw the appropriate errors"
-            response.validate()
+            if response.rcode == 1:  # Return code
+                print(f"ERROR\tFORMAT ERROR : name server was unable to interpret the query")
+            elif response.rcode == 2:
+                print(f"ERROR\tSERVER FAILURE : unable to process query due to a problem with the name server")
+            elif response.rcode == 4:
+                print(f"ERROR\tNOT IMPLEMENTED : the name server does not support the requested kind of query")
+            elif response.rcode == 5:
+                print(f"ERROR\tREFUSED : the name server refuses to perform the requested operation for policy reasons")
 
             response.print()
             break
@@ -59,31 +65,14 @@ def request_ip(dns_args: argparse.Namespace):
             print(f"ERROR\tTimeout while contacting server: {timeout_error}. Retransmitting request.")
             continue
         except socket.gaierror as gai_error:
-            print(f"ERROR\tSocket error: {gai_error}")
+            print(f"ERROR\tUnknown host error: {gai_error}")
             break
         except socket.herror as h_error:
-            print(f"ERROR\tSocket error: {h_error}")
-            break
+            print(f"ERROR\tSocket herror: {h_error}")
+            continue
         except socket.error as socket_error:
             print(f"ERROR\tSocket error: {socket_error}")
-            break
-        except dns.FormatError:
-            print(f"ERROR\tFORMAT ERROR : name server was unable to interpret the query")
-            break
-        except dns.ServerFailure:
-            print(f"ERROR\tSERVER FAILURE : unable to process query due to a problem with the name server")
-            break
-        except dns.NotImplement:
-            print(f"ERROR\tNOT IMPLEMENTED : the name server does not support the requested kind of query")
-            break
-        except dns.Refused:
-            print(f"ERROR\tREFUSED : the name server refuses to perform the requested operation for policy reasons")
-            break
-        except dns.NotFound:
-            print("NOTFOUND")
-            break
-        except dns.ClassError:
-            print(f"ERROR\tCLASS 16-bit code is not 1")
+            continue
 
     if retries == max_retries:
         print(f"ERROR\tMaximum retries exceeded: {max_retries}")
@@ -107,7 +96,7 @@ if __name__ == '__main__':
     group.add_argument('-mx', help="Mail server", action='store_true')
     group.add_argument('-ns', help="Name server", action='store_true')
 
-    parser.add_argument('server', metavar='@server', help="IPv4 address of the DNS server, in a.b.c.d.format")
+    parser.add_argument('server', metavar='@server', help="IPv4 address of the DNS server, in a.b.c.d format")
     parser.add_argument('name', help="Domain name to query for")
 
     args: argparse.Namespace = parser.parse_args()
